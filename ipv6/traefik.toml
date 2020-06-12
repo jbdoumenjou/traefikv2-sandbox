@@ -1,0 +1,12 @@
+#[http.routers.api]
+#    entrypoints=["websecure"]
+#    rule="Path(`/api/rawdata`)"
+#    service="api@internal"
+
+[http.routers.router0]
+    entrypoints=["websecure"]
+    rule="Host(`whoami`)"
+    service="service0"
+
+[[http.services.service0.loadBalancer.servers]]
+    url = "http://[2001:3984:3989::10]"

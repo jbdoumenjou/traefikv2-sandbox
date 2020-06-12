@@ -1,0 +1,45 @@
+#version: '3.8'
+version: '2.4'
+
+networks:
+  traefik:
+    # only in 2.x docker-compose versions
+    # https://docs.docker.com/compose/compose-file/#network-configuration-reference
+    enable_ipv6: true
+    name: "traefik"
+    ipam:
+      driver: default
+      config:
+#        - subnet: "172.16.238.0/24"
+        - subnet: "2001:3984:3989::/64"
+
+services:
+  traefik:
+    image: containous/traefik:latest
+#    image: traefik:v2.2
+    container_name: traefik
+    command: --log.level=debug --api.insecure --entrypoints.web.address=:80 --entrypoints.web.http.redirections.entrypoint.to=websecure --entrypoints.websecure.http.tls=true --entrypoints.web.http.redirections.entrypoint.scheme=https --entrypoints.websecure.address=:443 --providers.file.directory=/etc/traefik/conf # --providers.docker
+    volumes:
+      - "./traefik.toml:/etc/traefik/conf/traefik.toml"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    networks:
+      - traefik
+
+  api:
+    image: containous/whoami
+# don't need the following conf
+#    sysctls:
+#      net.ipv6.conf.all.disable_ipv6: 0
+#      net.ipv6.conf.all.forwarding: 1
+    labels:
+      - traefik.http.routers.router0.entrypoints=websecure
+#      - traefik.http.routers.router0.tls=true
+      - traefik.http.routers.router0.rule=Host(`whoami`)
+    networks:
+      traefik:
+        ipv6_address: 2001:3984:3989::10
+#        ipv4_address: 172.16.238.12
